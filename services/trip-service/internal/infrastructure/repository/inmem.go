@@ -1,6 +1,9 @@
 package repository
 
-import "ride-sharing/tools/services/trip-service/internal/domain"
+import (
+	"context"
+	"ride-sharing/services/trip-service/internal/domain"
+)
 
 type inmemoryRepository struct {
 	trips map[string]*domain.TripModel
@@ -14,3 +17,8 @@ func NewinmemRepository() *inmemoryRepository{
 	}
 }
 
+func(r *inmemoryRepository) CreateTrip(ctx context.Context, trip *domain.TripModel) (*domain.TripModel, error){
+
+	r.trips[trip.ID.Hex()] = trip;
+	return trip, nil; 
+}

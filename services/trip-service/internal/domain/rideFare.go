@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"context"
 	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -14,6 +14,3 @@ type RideFareModel struct{
 	ExpiresAt time.Time
 }
 
-type TripService interface {
-	CreateTrip(ctx context.Context, fare *RideFareModel) (*TripModel, error);
-}
