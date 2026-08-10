@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"ride-sharing/services/trip-service/internal/infrastructure/grpc"
 	"ride-sharing/services/trip-service/internal/infrastructure/repository"
 	"ride-sharing/services/trip-service/internal/service"
 	"syscall"
@@ -40,7 +41,9 @@ func main() {
 
 	// 2) create grpc server
 	grpcServer := grpcserver.NewServer()
-	// todo initialize our grpc handler implementation
+	// TODO initialize our grpc handler implementation
+	grpc.NewgRPCHandler(grpcServer, svc)
+
 	log.Printf("Starting gRPC server, Trip service on port %s", lis.Addr().String())
 
 	// 3) Start the server on goroutine
