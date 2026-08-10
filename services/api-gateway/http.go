@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
+	"ride-sharing/services/api-gateway/grpc_clients"
 	"ride-sharing/shared/contracts"
 )
 
@@ -26,25 +26,36 @@ func handleTripPreview(w http.ResponseWriter, r *http.Request) {
 
 	// Todo call trip service
 
-	jsonBody, _ := json.Marshal(reqBody)
-	reader := bytes.NewReader(jsonBody)
+	// jsonBody, _ := json.Marshal(reqBody)
+	// reader := bytes.NewReader(jsonBody)
 
-	resp, err := http.Post("http://trip-service:8083/preview", "application/json", reader)
+	// Why we need to create a new client for each connection:
+	// because if a service is down, we don't want to block the whole application
+	// so we create a new client for each connection
+	tripService, err := grpc_clients.NewServiceClient()
 	if err != nil {
-		log.Print(err)
+		log.Fatal(err)
 	}
 
-	defer resp.Body.Close()
+	// Don't forget to close the client to avoid resource leaks!
+	defer tripService.Close()
 
-	var respBody any
+	// resp, err := http.Post("http://trip-service:8083/preview", "application/json", reader)
+	// if err != nil {
+	// 	log.Print(err)
+	// }
 
-	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
-		http.Error(w, "Failed to parse json data from trip service", http.StatusBadRequest)
-		return
-	}
+	// defer resp.Body.Close()
+
+	// var respBody any
+
+	// if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+	// 	http.Error(w, "Failed to parse json data from trip service", http.StatusBadRequest)
+	// 	return
+	// }
 
 	response := contracts.APIResponse{
-		Data: respBody,
+		Data: "okay",
 	}
 	if err := writeJson(w, http.StatusCreated, response); err != nil {
 		panic("error ")
