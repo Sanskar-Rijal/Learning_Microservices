@@ -41,7 +41,7 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 	}
 
 	// get userID
-	// userID := req.GetUserID()
+	userID := req.GetUserID()
 
 	t, err := h.service.GetRoute(ctx, pickUpCoordinates, destinationCoordinates)
 	if err != nil {
@@ -49,8 +49,16 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 		return nil, status.Errorf(codes.Internal, "failed to get route: %v", err)
 	}
 
+	// 1. Estimate the ride fares prices based on the route (example distance)
+	estimatedFares := h.service.EstimatePackagesPriceWithRoute(t)
+	// 2. Store the ride Fares for the createtrip
+	fares, err := h.service.GenerateTripFares(ctx, estimatedFares, userID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to generate price: %v", err)
+	}
+
 	return &pb.PreviewTripResponse{
 		Route:     t.ToProto(),
-		RideFares: []*pb.RideFare{},
+		RideFares: domain.ToRideFareProto(fares),
 	}, nil
 }

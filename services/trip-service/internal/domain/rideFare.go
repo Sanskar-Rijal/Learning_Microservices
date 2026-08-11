@@ -1,16 +1,35 @@
 package domain
 
 import (
+	pb "ride-sharing/shared/proto/trip"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type RideFareModel struct{
-	ID primitive.ObjectID
-	UserID string
-	PackageSlug string
-	TotalPrice float64
-	ExpiresAt time.Time
+type RideFareModel struct {
+	ID              primitive.ObjectID
+	UserID          string
+	PackageSlug     string
+	TotalPriceInNpr float64
+	ExpiresAt       time.Time
 }
 
+func (r *RideFareModel) ToProto() *pb.RideFare {
+	return &pb.RideFare{
+		Id:              r.ID.Hex(),
+		UserID:          r.UserID,
+		PackageSlug:     r.PackageSlug,
+		TotalPriceInNpr: r.TotalPriceInNpr,
+	}
+}
+
+func ToRideFareProto(fares []*RideFareModel) []*pb.RideFare {
+	var protoFares []*pb.RideFare
+
+	for _, f := range fares {
+		protoFares = append(protoFares, f.ToProto())
+	}
+
+	return protoFares
+}
