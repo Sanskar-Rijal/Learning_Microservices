@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"ride-sharing/services/trip-service/internal/domain"
 	tripTypes "ride-sharing/services/trip-service/pkg/types"
+	"ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -29,6 +30,7 @@ func (s *service) CreateTrip(ctx context.Context, fare *domain.RideFareModel) (*
 		UserID:   fare.UserID,
 		Status:   "pending",
 		RideFare: fare,
+		Driver:   &trip.TripDriver{}, // initialize driver as an empty struct here
 	}
 
 	return s.repo.CreateTrip(ctx, t)
@@ -71,7 +73,7 @@ func (s *service) EstimatePackagesPriceWithRoute(route *tripTypes.OsrmApiRespons
 	return estimatedFares
 }
 
-func (s *service) GenerateTripFares(ctx context.Context, rideFares []*domain.RideFareModel, userID string) ([]*domain.RideFareModel, error) {
+func (s *service) GenerateTripFares(ctx context.Context, rideFares []*domain.RideFareModel, userID string, route *tripTypes.OsrmApiResponse) ([]*domain.RideFareModel, error) {
 	// function to store in database
 	fares := make([]*domain.RideFareModel, len(rideFares))
 
@@ -82,6 +84,7 @@ func (s *service) GenerateTripFares(ctx context.Context, rideFares []*domain.Rid
 			ID:              id,
 			TotalPriceInNpr: f.TotalPriceInNpr,
 			PackageSlug:     f.PackageSlug,
+			Route:           route,
 		}
 
 		if err := s.repo.SaveRideFare(ctx, fare); err != nil {
@@ -136,4 +139,23 @@ func getBaseFaresWithPackages() []*domain.RideFareModel {
 			TotalPriceInNpr: 800,
 		},
 	}
+}
+
+// get and validate service
+func (s *service) GetAndValidate(ctx context.Context, fareID, userID string) (*domain.RideFareModel, error) {
+	fare, err := s.repo.GetRideFareByID(ctx, fareID)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get trip fare: %w", err)
+	}
+
+	if fare == nil {
+		return nil, fmt.Errorf("Fare doesnt exist")
+	}
+
+	// add validation is user the owner of the fare ?
+	if userID != fare.UserID {
+		return nil, fmt.Errorf("Fare doesnot belong to the user")
+	}
+
+	return fare, nil
 }
